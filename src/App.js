@@ -2,8 +2,10 @@ import React, {useEffect, useRef, useState, useImperativeHandle} from "react";
 import TypeIt from "typeit";
 import DiffMatchPatch from "diff-match-patch";
 import Highlight, { defaultProps } from "prism-react-renderer";
-import './App.css'
+import Prism from "prismjs";
 
+import './App.css'
+import "prismjs/themes/prism-tomorrow.css";
 
 const differ = new DiffMatchPatch();
 
@@ -23,15 +25,13 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
 
   useEffect(() => {
     typeRef.current = new TypeIt(codeRef.current, {
-      speed     : 50,
-      html      : false,
-      afterStep : (step, instance) => {
-        console.log(codeRef.current.textContent);
+      speed      : 100,
+      html       : true,
+      afterStep  : (step, instance) => {
         setText(codeRef.current.textContent);
+        Prism.highlightElement(document.querySelector('#prism-renderer'));
       }
     });
-
-    // typeRef.current = typeRef.current.empty();
 
     let prev = '';
     for (const curr of strings) {
@@ -70,17 +70,19 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
     typeRef.current.go();
     if (typeRef.current.is('completed')) {
       console.log('destroying typeit instance')
-      // typeRef.current.destroy();
+      typeRef.current.destroy();
     }
-
-
 
   }, [strings])
 
-  return (<>
+  const typeit_component   = (<>
+    <h3>TypeIt Output</h3>
     <pre>
-      <code ref={codeRef} style={{display: "none"}} />
+      <code ref={codeRef} />
     </pre>
+  </>)
+  const renderer_component = (<>
+    <h3>Prism React Renderer</h3>
     <Highlight {...defaultProps} code={text} language="javascript">
       {({ className, style, tokens, getLineProps, getTokenProps }) => (
         <pre className={className} style={style}>
@@ -94,6 +96,20 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
           </pre>
       )}
     </Highlight>
+  </>)
+  const prism_component    = (<>
+    <h3>Prism Renderer</h3>
+    <pre>
+      <code id={'prism-renderer'} className={'language-js'}>
+        {text}
+      </code>
+    </pre>
+  </>)
+
+  return (<>
+    {typeit_component}
+    {renderer_component}
+    {prism_component}
   </>)
 
 })
