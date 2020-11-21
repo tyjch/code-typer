@@ -1,6 +1,7 @@
 import React, {useEffect, useRef, useState, useImperativeHandle} from "react";
 import TypeIt from "typeit";
 import DiffMatchPatch from "diff-match-patch";
+import Highlight, { defaultProps } from "prism-react-renderer";
 import './App.css'
 
 
@@ -8,12 +9,12 @@ const differ = new DiffMatchPatch();
 
 const CodeTyper = React.forwardRef(({strings}, ref) => {
 
+  const [text, setText] = useState('');
   const codeRef = useRef(null);
   const typeRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     step() {
-      console.log('`step()` called from imperative handle')
       if (typeRef.current !== null) {
         typeRef.current.unfreeze();
       }
@@ -22,15 +23,17 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
 
   useEffect(() => {
     typeRef.current = new TypeIt(codeRef.current, {
-      speed       : 50,
-      // afterStep : (step, instance) => {
-      //   console.log(step)
-      // }
+      speed     : 50,
+      html      : false,
+      afterStep : (step, instance) => {
+        console.log(codeRef.current.textContent);
+        setText(codeRef.current.textContent);
+      }
     });
-    console.log('change this')
-    // typeRef.current = typeRef.current.empty();
-    let prev = '';
 
+    // typeRef.current = typeRef.current.empty();
+
+    let prev = '';
     for (const curr of strings) {
       typeRef.current = typeRef.current.move('START');
       let diff        = differ.diff_main(prev, curr);
@@ -67,16 +70,31 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
     typeRef.current.go();
     if (typeRef.current.is('completed')) {
       console.log('destroying typeit instance')
-      typeRef.current.destroy();
+      // typeRef.current.destroy();
     }
+
+
 
   }, [strings])
 
-  return (
+  return (<>
     <pre>
-      <code ref={codeRef} />
+      <code ref={codeRef} style={{display: "none"}} />
     </pre>
-  )
+    <Highlight {...defaultProps} code={text} language="javascript">
+      {({ className, style, tokens, getLineProps, getTokenProps }) => (
+        <pre className={className} style={style}>
+            {tokens.map((line, i) => (
+              <div {...getLineProps({ line, key: i })}>
+                {line.map((token, key) => (
+                  <span {...getTokenProps({ token, key })} />
+                ))}
+              </div>
+            ))}
+          </pre>
+      )}
+    </Highlight>
+  </>)
 
 })
 
