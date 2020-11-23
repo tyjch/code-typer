@@ -1,19 +1,18 @@
 import React, {useEffect, useRef, useState, useImperativeHandle} from "react";
 import TypeIt from "typeit";
 import DiffMatchPatch from "diff-match-patch";
-import Highlight, { defaultProps } from "prism-react-renderer";
 import Prism from "prismjs";
-
 import './App.css'
 import "prismjs/themes/prism-tomorrow.css";
 
 const differ = new DiffMatchPatch();
 
-const CodeTyper = React.forwardRef(({strings}, ref) => {
+const CodeTyper = React.forwardRef(({strings, language}, ref) => {
 
   const [text, setText] = useState('');
-  const codeRef = useRef(null);
-  const typeRef = useRef(null);
+  const codeRef  = useRef(null);
+  const typeRef  = useRef(null);
+  const prismRef = useRef(null);
 
   useImperativeHandle(ref, () => ({
     step() {
@@ -25,11 +24,11 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
 
   useEffect(() => {
     typeRef.current = new TypeIt(codeRef.current, {
-      speed      : 100,
-      html       : true,
-      afterStep  : (step, instance) => {
+      speed     : 100,
+      html      : true,
+      afterStep : (step, instance) => {
         setText(codeRef.current.textContent);
-        Prism.highlightElement(document.querySelector('#prism-renderer'));
+        Prism.highlightElement(prismRef.current);
       }
     });
 
@@ -75,32 +74,14 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
 
   }, [strings])
 
-  const typeit_component   = (<>
-    <h3>TypeIt Output</h3>
+  const typeit_component = (<>
     <pre>
-      <code ref={codeRef} />
+      <code ref={codeRef} style={{ display: 'none' }} />
     </pre>
   </>)
-  const renderer_component = (<>
-    <h3>Prism React Renderer</h3>
-    <Highlight {...defaultProps} code={text} language="javascript">
-      {({ className, style, tokens, getLineProps, getTokenProps }) => (
-        <pre className={className} style={style}>
-            {tokens.map((line, i) => (
-              <div {...getLineProps({ line, key: i })}>
-                {line.map((token, key) => (
-                  <span {...getTokenProps({ token, key })} />
-                ))}
-              </div>
-            ))}
-          </pre>
-      )}
-    </Highlight>
-  </>)
-  const prism_component    = (<>
-    <h3>Prism Renderer</h3>
+  const prism_component  = (<>
     <pre>
-      <code id={'prism-renderer'} className={'language-js'}>
+      <code className={language} ref={prismRef}>
         {text}
       </code>
     </pre>
@@ -108,15 +89,14 @@ const CodeTyper = React.forwardRef(({strings}, ref) => {
 
   return (<>
     {typeit_component}
-    {renderer_component}
     {prism_component}
   </>)
 
 })
 
 export default function App() {
-  const typeRef = useRef(null);
-  const strings = [
+  const typeRef   = useRef(null);
+  const strings   = [
     `function foo(x) {
   return x + 1;
 }`,
@@ -127,13 +107,14 @@ export default function App() {
   return recursive_bar(y + 1);
 }`,
   ]
+  const languauge = 'language-js'
 
   return (
       <div className="App">
         <h1>Hello CodeSandbox</h1>
         <h2>Start editing to see some magic happen!</h2>
         <button onClick={() => {typeRef.current.step()}}> Step </button>
-        <CodeTyper strings={strings} ref={typeRef} />
+        <CodeTyper strings={strings} language={languauge} ref={typeRef} />
       </div>
   );
 }
